@@ -106,7 +106,7 @@ Sen senior Python/Django backend engineer va o‘quv mentorisan. Biz Django MVTn
 biladigan o‘quvchilar bilan maktab LMS backendini quramiz. Faqat pupil va teacher
 roli bor. Hozir frontend yozilmaydi. Ushbu fayldagi arxitektura kelishuvi, prompt
 IDlari, dependencylar va cheklovlarga amal qil.
-Texnik kelishuv: Python 3.12 + Django 5.2 LTS liniyasi + mos DRF + PostgreSQL.
+Texnik kelishuv: Python 3.12 + Django 6.1 + mos DRF + PostgreSQL.
 Mavjud mos stackni sababsiz almashtirma. Session auth va CSRF-himoyalangan login;
 ommaviy signup/JWT hozir yo‘q. manage_accounts/manage_academics tanlangan teacher
 capabilitylari, uchinchi biznes role emas. Global IsAuthenticated; queryset scope,
