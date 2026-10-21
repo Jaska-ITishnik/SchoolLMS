@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Supply values through the shell environment; never commit a real key.
 SECRET_KEY = os.environ.get("SECRET_KEY", "local-development-key-change-before-use")
 DEBUG = os.environ.get("DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}
+ENABLE_DEMO_API = os.environ.get("ENABLE_DEMO_API", "0").strip().lower() in {"1", "true", "yes", "on"}
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")

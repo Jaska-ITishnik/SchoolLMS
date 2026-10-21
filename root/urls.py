@@ -15,12 +15,32 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.conf import settings
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
-]
+from apps.views import LearningGoalDemoView
+
+
+def build_urlpatterns(*, debug, enable_demo_api):
+    patterns = [
+        path('admin/', admin.site.urls),
+        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+        path('', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+        path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    ]
+    if debug and enable_demo_api:
+        patterns.append(
+            path(
+                'api/v1/demo/learning-goal/',
+                LearningGoalDemoView.as_view(),
+                name='demo-learning-goal',
+            )
+        )
+    return patterns
+
+
+urlpatterns = build_urlpatterns(
+    debug=settings.DEBUG,
+    enable_demo_api=settings.ENABLE_DEMO_API,
+)

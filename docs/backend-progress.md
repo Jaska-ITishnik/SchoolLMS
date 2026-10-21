@@ -11,11 +11,11 @@ Hujjat-only promptlarda sun’iy test talab qilinmaydi. Holat faqat shu promptni
 
 ## Joriy holat
 
-- Amaldagi prompt: P003
+- Amaldagi prompt: P005
 - Holati: verified
-- Dalil: `accounts.User` va `0001_initial` migratsiyasi yaratildi; Django system check va synthetic password hash testi o‘tdi.
-- Keyingi tavsiya: P004
-- Ochiq eslatma: haqiqiy PostgreSQLga dastlabki migrate P004da bajariladi; asosiy `db.sqlite3` o‘zgarmagan.
+- Dalil: P004: lokal `lms_db` PostgreSQL bazasiga ulanish ishladi; barcha migrationlar, jumladan `accounts.0001_initial`, qo‘llandi; sintetik pupil yozuvi alohida Django shell jarayonida qayta o‘qildi. P005: DRF demo endpoint, serializer va development flag qo‘shildi; 8 test, system check, production URL exclusion check va `git diff --check` o‘tdi.
+- Keyingi tavsiya: P006
+- Ochiq blocker: yo‘q.
 
 ## Promptlar
 
@@ -24,8 +24,8 @@ Hujjat-only promptlarda sun’iy test talab qilinmaydi. Holat faqat shu promptni
 | P001 | verified | Backend scope/progress hujjatlari yaratildi va ko‘rib chiqildi. |
 | P002 | verified | `.env.example`, sozlanadigan settings, README, dependency pins/lock va `.gitignore` yangilandi; `manage.py check` o‘tdi. Migrate qilmadik: custom User P003da keladi. |
 | P003 | verified | `accounts.User` `AbstractUser`dan meros oldi; initial migrationda role CHECK bor. Username inherited unique. In-memory test `create_user()` parolni hash qilishini tasdiqladi. |
-| P004 | not_started | — |
-| P005 | not_started | — |
+| P004 | verified | `.env`dagi PostgreSQL ulanishi bilan `lms_db`ga ulandi; Django system check va barcha migrationlar o‘tdi; sintetik pupil yozuvi keyingi Django shell jarayonida saqlanib qoldi. |
+| P005 | verified | `IsAuthenticated` global permission ostida GET/POST endpoint qo‘shildi; missing field va malformed JSON `400`, noto‘g‘ri method `405`. 8 test va production URL yo‘qligi `DEBUG=0`, flag yoqilgan holatda tekshirildi. |
 | P006 | not_started | — |
 | P007 | not_started | — |
 | P008 | not_started | — |
