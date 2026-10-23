@@ -17,18 +17,26 @@ Including another URLconf
 from django.contrib import admin
 from django.conf import settings
 from django.urls import path
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from apps.views import LearningGoalDemoView
 
 
-def build_urlpatterns(*, debug, enable_demo_api):
+def build_urlpatterns(*, debug, enable_demo_api, enable_api_docs=False):
     patterns = [
         path('admin/', admin.site.urls),
-        path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-        path('', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-        path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     ]
+    if debug and enable_api_docs:
+        from drf_spectacular.views import (
+            SpectacularAPIView,
+            SpectacularRedocView,
+            SpectacularSwaggerView,
+        )
+
+        patterns.extend([
+            path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+            path('', SpectacularSwaggerView.as_view(url_name='schema'), name='api-docs'),
+            path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+        ])
     if debug and enable_demo_api:
         patterns.append(
             path(
@@ -43,4 +51,5 @@ def build_urlpatterns(*, debug, enable_demo_api):
 urlpatterns = build_urlpatterns(
     debug=settings.DEBUG,
     enable_demo_api=settings.ENABLE_DEMO_API,
+    enable_api_docs=settings.ENABLE_API_DOCS,
 )

@@ -1,0 +1,62 @@
+openapi: 3.0.3
+info:
+  title: School LMS API
+  version: 1.0.0
+  description: School LMS backend API
+paths:
+  /api/v1/demo/learning-goal/:
+    get:
+      operationId: v1_demo_learning_goal_retrieve
+      tags:
+      - v1
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningGoalInput'
+          description: ''
+    post:
+      operationId: v1_demo_learning_goal_create
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningGoalInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LearningGoalInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LearningGoalInput'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningGoalInput'
+          description: ''
+components:
+  schemas:
+    LearningGoalInput:
+      type: object
+      properties:
+        title:
+          type: string
+        goal:
+          type: string
+      required:
+      - goal
+      - title
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

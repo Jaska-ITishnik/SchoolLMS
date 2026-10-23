@@ -49,14 +49,16 @@ set +a
 .venv/bin/python manage.py runserver
 ```
 
-For an already configured virtual environment, skip the `venv` creation command. The lock was generated with `pip freeze` from the Python 3.12 project environment; refresh it after intentionally changing the direct dependencies:
+For an already configured virtual environment, skip the `venv` creation command. Install the production dependency lock for runtime work, or the development lock for tests and OpenAPI tooling:
 
 ```sh
-.venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m pip freeze > requirements.lock
+# Production/runtime environment:
+.venv/bin/python -m pip install -r requirements.lock
+# Local development and testing environment:
+.venv/bin/python -m pip install -r requirements-dev.lock
 ```
 
-`requirements.txt` pins direct dependencies. `requirements.lock` pins the resolved direct and transitive package versions used for repeatable installation. Secrets belong in the ignored local `.env` or the deployment environment, never in source control.
+`requirements.txt` contains direct runtime dependencies. `requirements-dev.txt` adds pytest, pytest-django, and drf-spectacular for development. `requirements.lock` and `requirements-dev.lock` pin the resolved runtime and development package versions. Secrets belong in the ignored local `.env` or the deployment environment, never in source control.
 
 `DEBUG=1` is for local development. Shared or production environments must set `DEBUG=0`, provide a private `SECRET_KEY`, and set the correct `ALLOWED_HOSTS`. Production deployment hardening is handled in later prompts.
 
@@ -76,6 +78,27 @@ curl -i -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRFToken: <csr
 ```
 
 Run the focused demo tests with `.venv/bin/python manage.py test apps.tests`.
+
+## P006 tests and OpenAPI
+
+The `pytest.ini` file selects `root.settings`; `conftest.py` provides an authenticated DRF `APIClient` fixture. Existing Django `TestCase` tests remain available through pytest-django. Run the whole current test set with:
+
+```sh
+.venv/bin/pytest
+```
+
+In the default development configuration (`DEBUG=1`), Swagger UI opens at `http://127.0.0.1:8000/`. Set `ENABLE_API_DOCS=0` to disable it locally. OpenAPI schema is at `/api/schema/`; `/api/redoc/` is also development-only. These documentation routes are unavailable when `DEBUG=0`. Generate and validate the contract with:
+
+```sh
+set -a
+. ./.env
+set +a
+ENABLE_API_DOCS=1 ENABLE_DEMO_API=1 .venv/bin/python manage.py spectacular --file docs/openapi.yaml --validate
+```
+
+The generated OpenAPI file documents the P005 demo route when `ENABLE_DEMO_API=1`; it does not implement request handling. The endpoint's request validation and permissions remain in the DRF view and serializer.
+
+References: [DRF testing](https://www.django-rest-framework.org/api-guide/testing/), [drf-spectacular](https://drf-spectacular.readthedocs.io/en/latest/readme.html), [pytest-django](https://pytest-django.readthedocs.io/en/latest/).
 
 For a persistence check, create one synthetic user, stop and restart Django, then query that same user again:
 

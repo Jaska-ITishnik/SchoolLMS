@@ -11,11 +11,11 @@ Hujjat-only promptlarda sun’iy test talab qilinmaydi. Holat faqat shu promptni
 
 ## Joriy holat
 
-- Amaldagi prompt: P005
+- Amaldagi prompt: P010
 - Holati: verified
-- Dalil: P004: lokal `lms_db` PostgreSQL bazasiga ulanish ishladi; barcha migrationlar, jumladan `accounts.0001_initial`, qo‘llandi; sintetik pupil yozuvi alohida Django shell jarayonida qayta o‘qildi. P005: DRF demo endpoint, serializer va development flag qo‘shildi; 8 test, system check, production URL exclusion check va `git diff --check` o‘tdi.
-- Keyingi tavsiya: P006
-- Ochiq blocker: yo‘q.
+- Dalil: `ClassMembership`, `Enrollment` va atomic assignment service qo‘shildi. SQLite’da role, bitta faol sinf, pupil-course faol unique, sinf almashganda tarixiy enrollmentlarni yopish va xatoda rollback tekshirildi. Orqaga sana bilan ko‘chirish latest membership sanasidan oldin yoki teng bo‘lsa rad etiladi va qoida `docs/academic-enrollment-rules.md`da yozilgan. 36 pytest testi, system check va migration drift tekshiruvi o‘tdi.
+- Keyingi tavsiya: P011
+- Ochiq blocker: PostgreSQL’da alohida constraint/concurrency tekshiruvi bajarilmadi; foydalanuvchi ko‘rsatgan joriy muhit SQLite.
 
 ## Promptlar
 
@@ -26,11 +26,11 @@ Hujjat-only promptlarda sun’iy test talab qilinmaydi. Holat faqat shu promptni
 | P003 | verified | `accounts.User` `AbstractUser`dan meros oldi; initial migrationda role CHECK bor. Username inherited unique. In-memory test `create_user()` parolni hash qilishini tasdiqladi. |
 | P004 | verified | `.env`dagi PostgreSQL ulanishi bilan `lms_db`ga ulandi; Django system check va barcha migrationlar o‘tdi; sintetik pupil yozuvi keyingi Django shell jarayonida saqlanib qoldi. |
 | P005 | verified | `IsAuthenticated` global permission ostida GET/POST endpoint qo‘shildi; missing field va malformed JSON `400`, noto‘g‘ri method `405`. 8 test va production URL yo‘qligi `DEBUG=0`, flag yoqilgan holatda tekshirildi. |
-| P006 | not_started | — |
-| P007 | not_started | — |
-| P008 | not_started | — |
-| P009 | not_started | — |
-| P010 | not_started | — |
+| P006 | verified | Pytest, pytest-django fixture va 3 APIClient testi qo‘shildi. Schema/docs yo‘llari `DEBUG=1` holatida mavjud; standart development sozlamasida Swagger `/` manzilida ochiladi. `docs/openapi.yaml` schema validation’dan o‘tdi. `drf-spectacular` va pytest vositalari dev requirement’lariga ajratildi. |
+| P007 | verified | Foydalanuvchi so‘ragan SQLite muhitida sana CHECK, takror chorak tartibi va yil chegarasi validatsiyasi tekshirildi; umumiy testlar 19/19 o‘tdi. PostgreSQL’da tekshirilmagan. |
+| P008 | verified | SQLite’da 1–11 sinf oralig‘i, sinf unikaligi, bir sinfda takror fan rad etilishi, 7-A va 7-B uchun bitta Subject ulanishi hamda PROTECT siyosati tekshirildi; umumiy testlar 24/24 o‘tdi. PostgreSQL’da tekshirilmagan. |
+| P009 | verified | SQLite’da pupil teacher sifatida rad etildi; teacher almashishi eski yozuvni o‘chir-masdan avvalgi intervalni yopib, yangi assignment yaratdi. Sana, inactive teacher va archived course qoidalari tekshirildi; umumiy testlar 29/29 o‘tdi. PostgreSQL’da tekshirilmagan. |
+| P010 | verified | SQLite’da teacher pupil sifatida rad etildi; faol sinf va pupil-course enrollment takrorlanishi DB’da rad etildi; sinf almashishi eski enrollmentlarni yopib saqladi; atomic rollback va backdate cheklovi tekshirildi. Jami testlar 36/36 o‘tdi. PostgreSQL’da alohida tekshirilmagan. |
 | P011 | not_started | — |
 | P012 | not_started | — |
 | P013 | not_started | — |

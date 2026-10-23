@@ -10,6 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "local-development-key-change-before-use")
 DEBUG = os.environ.get("DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}
 ENABLE_DEMO_API = os.environ.get("ENABLE_DEMO_API", "0").strip().lower() in {"1", "true", "yes", "on"}
+ENABLE_API_DOCS = DEBUG and os.environ.get("ENABLE_API_DOCS", "1").strip().lower() in {"1", "true", "yes", "on"}
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -26,10 +27,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts.apps.AccountsConfig',
+    'academics.apps.AcademicsConfig',
     'apps.apps.AppsConfig',
     'rest_framework',
-    'drf_spectacular',
 ]
+if ENABLE_API_DOCS:
+    INSTALLED_APPS.append('drf_spectacular')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -87,7 +90,11 @@ if DB_ENGINE == 'django.db.backends.postgresql':
     })
 
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': (
+        'drf_spectacular.openapi.AutoSchema'
+        if ENABLE_API_DOCS
+        else 'rest_framework.schemas.openapi.AutoSchema'
+    ),
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
     ],
