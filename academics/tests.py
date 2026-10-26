@@ -2,10 +2,11 @@ from datetime import date
 from unittest.mock import patch
 
 from accounts.models import User
+from django.core.management import call_command, CommandError
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models.deletion import ProtectedError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from academics.models import (
@@ -20,6 +21,7 @@ from academics.models import (
 )
 from academics.services import assign_teacher_to_course, close_teaching_assignment
 from academics.membership_services import assign_pupil_to_class
+from rest_framework.test import APIClient
 
 
 class AcademicYearTests(TestCase):
@@ -437,3 +439,171 @@ class ClassMembershipTests(TestCase):
             2,
         )
         self.assertFalse(ClassMembership.objects.filter(pupil=self.pupil, school_class=self.class_7b).exists())
+
+
+class SyntheticSeedCommandTests(TestCase):
+    @override_settings(DEBUG=True)
+    def test_seed_is_idempotent_and_user_passwords_are_hashed(self):
+        with patch.dict('os.environ', {
+            'SEED_TEACHER_PASSWORD': 'teacher-only-test-secret',
+            'SEED_PUPIL_PASSWORD': 'pupil-only-test-secret',
+        }):
+            call_command('seed_school', verbosity=0)
+            model_counts = (
+                AcademicYear.objects.count(),
+                Term.objects.count(),
+                SchoolClass.objects.count(),
+                Subject.objects.count(),
+                CourseOffering.objects.count(),
+                TeachingAssignment.objects.count(),
+                User.objects.count(),
+                ClassMembership.objects.count(),
+                Enrollment.objects.count(),
+            )
+            call_command('seed_school', verbosity=0)
+
+        self.assertEqual(model_counts, (
+            AcademicYear.objects.count(),
+            Term.objects.count(),
+            SchoolClass.objects.count(),
+            Subject.objects.count(),
+            CourseOffering.objects.count(),
+            TeachingAssignment.objects.count(),
+            User.objects.count(),
+            ClassMembership.objects.count(),
+            Enrollment.objects.count(),
+        ))
+        self.assertEqual(model_counts, (1, 4, 2, 4, 8, 8, 6, 4, 16))
+        for username, password in (
+            ('seed-teacher-1', 'teacher-only-test-secret'),
+            ('seed-pupil-1', 'pupil-only-test-secret'),
+        ):
+            user = User.objects.get(username=username)
+            self.assertNotEqual(user.password, password)
+            self.assertTrue(user.check_password(password))
+
+    @override_settings(DEBUG=False)
+    def test_seed_is_rejected_when_debug_is_disabled(self):
+        with self.assertRaises(CommandError):
+            call_command('seed_school', verbosity=0)
+
+
+class CourseReadAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        today = timezone.localdate()
+        year = AcademicYear.objects.create(
+            label='2026–2027 API',
+            start_date=date(today.year, 1, 1),
+            end_date=date(today.year + 1, 12, 31),
+        )
+        self.class_7a = SchoolClass.objects.create(year=year, grade_level=7, section='A')
+        self.class_7b = SchoolClass.objects.create(year=year, grade_level=7, section='B')
+        subject = Subject.objects.create(code='API-MATH', title='Matematika')
+        self.course_7a = CourseOffering.objects.create(
+            school_class=self.class_7a,
+            subject=subject,
+        )
+        self.course_7b = CourseOffering.objects.create(
+            school_class=self.class_7b,
+            subject=subject,
+        )
+        self.teacher_7a = User.objects.create_user(
+            username='api-teacher-7a',
+            password='safe-test-password',
+            first_name='Aziza',
+            last_name='Karimova',
+            role=User.Role.TEACHER,
+        )
+        self.teacher_7b = User.objects.create_user(
+            username='api-teacher-7b',
+            password='safe-test-password',
+            role=User.Role.TEACHER,
+        )
+        assign_teacher_to_course(
+            course=self.course_7a,
+            teacher=self.teacher_7a,
+            start_date=today,
+        )
+        assign_teacher_to_course(
+            course=self.course_7b,
+            teacher=self.teacher_7b,
+            start_date=today,
+        )
+        self.pupil_7a = User.objects.create_user(
+            username='api-pupil-7a',
+            password='safe-test-password',
+            role=User.Role.PUPIL,
+        )
+        self.pupil_7b = User.objects.create_user(
+            username='api-pupil-7b',
+            password='safe-test-password',
+            role=User.Role.PUPIL,
+        )
+        assign_pupil_to_class(
+            pupil=self.pupil_7a,
+            school_class=self.class_7a,
+            start_date=today,
+        )
+        assign_pupil_to_class(
+            pupil=self.pupil_7b,
+            school_class=self.class_7b,
+            start_date=today,
+        )
+
+    def test_anonymous_user_cannot_list_or_retrieve_courses(self):
+        self.assertEqual(self.client.get('/api/v1/courses/').status_code, 403)
+        self.assertEqual(
+            self.client.get(f'/api/v1/courses/{self.course_7a.pk}/').status_code,
+            403,
+        )
+
+    def test_pupil_list_and_detail_are_limited_to_enrolled_courses(self):
+        self.client.force_authenticate(user=self.pupil_7a)
+
+        response = self.client.get('/api/v1/courses/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0], {
+            'id': self.course_7a.pk,
+            'subject': 'Matematika',
+            'school_class': '7-A',
+            'teacher': 'Aziza Karimova',
+            'year': '2026–2027 API',
+        })
+        self.assertEqual(
+            self.client.get(f'/api/v1/courses/{self.course_7a.pk}/').status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(f'/api/v1/courses/{self.course_7b.pk}/').status_code,
+            404,
+        )
+
+    def test_teacher_list_and_detail_are_limited_to_current_assignments(self):
+        self.client.force_authenticate(user=self.teacher_7a)
+
+        response = self.client.get('/api/v1/courses/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['id'] for row in response.data], [self.course_7a.pk])
+        self.assertEqual(
+            self.client.get(f'/api/v1/courses/{self.course_7b.pk}/').status_code,
+            404,
+        )
+
+    def test_local_session_user_can_read_only_its_scoped_course(self):
+        self.client.force_login(self.pupil_7a)
+
+        response = self.client.get('/api/v1/courses/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([row['id'] for row in response.data], [self.course_7a.pk])
+
+    def test_read_serializer_does_not_expose_account_or_pupil_profile_fields(self):
+        self.client.force_authenticate(user=self.pupil_7a)
+
+        response = self.client.get(f'/api/v1/courses/{self.course_7a.pk}/')
+        self.assertEqual(response.status_code, 200)
+        self.assertSetEqual(
+            set(response.data),
+            {'id', 'subject', 'school_class', 'teacher', 'year'},
+        )

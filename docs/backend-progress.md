@@ -11,10 +11,10 @@ Hujjat-only promptlarda sun’iy test talab qilinmaydi. Holat faqat shu promptni
 
 ## Joriy holat
 
-- Amaldagi prompt: P010
+- Amaldagi prompt: P012
 - Holati: verified
-- Dalil: `ClassMembership`, `Enrollment` va atomic assignment service qo‘shildi. SQLite’da role, bitta faol sinf, pupil-course faol unique, sinf almashganda tarixiy enrollmentlarni yopish va xatoda rollback tekshirildi. Orqaga sana bilan ko‘chirish latest membership sanasidan oldin yoki teng bo‘lsa rad etiladi va qoida `docs/academic-enrollment-rules.md`da yozilgan. 36 pytest testi, system check va migration drift tekshiruvi o‘tdi.
-- Keyingi tavsiya: P011
+- Dalil: P011 seed tekshiruvi saqlangan. `GET /api/v1/courses/` va `GET /api/v1/courses/{id}/` explicit serializer maydonlari va `IsAuthenticated` bilan qo‘shildi; pupil faqat faol enrollment/membership kurslarini, teacher esa bugungi faol assignment kurslarini ko‘radi. Anonymous, boshqa sinf detail, sessiya bilan o‘qish va profil/password maydonlari chiqmasligi tekshirildi. OpenAPI schema validate’dan ogohlantirishsiz o‘tdi; 43 pytest testi, Django system check va migration drift tekshiruvi o‘tdi. SQLite’da tekshirildi.
+- Keyingi tavsiya: P013
 - Ochiq blocker: PostgreSQL’da alohida constraint/concurrency tekshiruvi bajarilmadi; foydalanuvchi ko‘rsatgan joriy muhit SQLite.
 
 ## Promptlar
@@ -31,8 +31,8 @@ Hujjat-only promptlarda sun’iy test talab qilinmaydi. Holat faqat shu promptni
 | P008 | verified | SQLite’da 1–11 sinf oralig‘i, sinf unikaligi, bir sinfda takror fan rad etilishi, 7-A va 7-B uchun bitta Subject ulanishi hamda PROTECT siyosati tekshirildi; umumiy testlar 24/24 o‘tdi. PostgreSQL’da tekshirilmagan. |
 | P009 | verified | SQLite’da pupil teacher sifatida rad etildi; teacher almashishi eski yozuvni o‘chir-masdan avvalgi intervalni yopib, yangi assignment yaratdi. Sana, inactive teacher va archived course qoidalari tekshirildi; umumiy testlar 29/29 o‘tdi. PostgreSQL’da tekshirilmagan. |
 | P010 | verified | SQLite’da teacher pupil sifatida rad etildi; faol sinf va pupil-course enrollment takrorlanishi DB’da rad etildi; sinf almashishi eski enrollmentlarni yopib saqladi; atomic rollback va backdate cheklovi tekshirildi. Jami testlar 36/36 o‘tdi. PostgreSQL’da alohida tekshirilmagan. |
-| P011 | not_started | — |
-| P012 | not_started | — |
+| P011 | verified | Idempotent `seed_school` command bir yil, 4 chorak, 2 sinf, 2 teacher, 4 pupil, 4 fan, 8 course, 8 teaching assignment va ularning membership/enrollmentlarini yaratadi. Ikki marta ishga tushirish, parol hash’i va `DEBUG=0`da rad etish tekshirildi; README’da sintetik ma’lumot va password env yo‘riqnomasi bor. 38 pytest testi, system check va migration drift tekshiruvi o‘tdi. SQLite’da tekshirilgan. |
+| P012 | verified | GET course list/detail read-only API qo‘shildi. Pupil faqat faol enrollment/membership kurslarini, teacher faqat bugungi faol assignment kurslarini oladi; archived course va boshqa roldagi user uchun ko‘rinish yo‘q. Anonymous request, list/detail scope, session auth va serializer allowlist test qilindi. `docs/openapi.yaml` validate’dan ogohlantirishsiz o‘tdi; jami 43 pytest testi. SQLite’da tekshirildi. |
 | P013 | not_started | — |
 | P014 | not_started | — |
 | P015 | not_started | — |

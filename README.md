@@ -113,3 +113,25 @@ After restarting Django, confirm the same row is still present:
 ```
 
 Start PostgreSQL with `sudo systemctl start postgresql` and stop it with `sudo systemctl stop postgresql`. Start Django with `.venv/bin/python manage.py runserver`; stop the development server with Ctrl+C. Restarting Django does not remove rows from PostgreSQL.
+
+## Synthetic school seed (P011)
+
+`seed_school` creates only clearly named synthetic accounts and academic records for local development: one year with four terms, 7-A and 7-B, two teachers, four pupils, four subjects, course offerings, assignments, memberships, and enrollments. It is idempotent; a second run reuses those records. It refuses to run when `DEBUG=0`. This command is not for importing real pupil or school data. Set separate local passwords only when first creating the sample accounts; the command stores Django password hashes and never prints the passwords:
+
+```sh
+read -rsp 'Synthetic teacher password: ' SEED_TEACHER_PASSWORD; export SEED_TEACHER_PASSWORD; echo
+read -rsp 'Synthetic pupil password: ' SEED_PUPIL_PASSWORD; export SEED_PUPIL_PASSWORD; echo
+.venv/bin/python manage.py seed_school
+unset SEED_TEACHER_PASSWORD SEED_PUPIL_PASSWORD
+```
+
+If the seed accounts already exist, the password variables are not needed for subsequent runs.
+
+## Course read API (P012)
+
+- `GET /api/v1/courses/` lists non-archived courses in the signed-in user's scope.
+- `GET /api/v1/courses/{id}/` returns one course in that same scope.
+- A pupil sees courses with an active enrollment and active class membership. A teacher sees courses with an assignment active today. Anonymous requests receive `403`; a course outside the caller's scope is indistinguishable from a missing course and receives `404`.
+- The read-only JSON fields are `id`, `subject`, `school_class`, `teacher`, and `year`. For example: `{"id": 1, "subject": "Matematika", "school_class": "7-A", "teacher": "Aziza Karimova", "year": "2026–2027"}`. No account or pupil profile fields are included.
+
+To demonstrate the session-authenticated response locally, sign into `/admin/` in the browser with a local account whose pupil/teacher role and active enrollment/assignment grant access, then open `http://127.0.0.1:8000/api/v1/courses/` in that same browser. Django's admin session cookie authenticates the GET request; the API still applies the account's course scope. The API has no create, update, or delete methods.

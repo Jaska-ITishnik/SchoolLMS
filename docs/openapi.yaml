@@ -4,11 +4,47 @@ info:
   version: 1.0.0
   description: School LMS backend API
 paths:
+  /api/v1/courses/:
+    get:
+      operationId: api_v1_courses_list
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseRead'
+          description: ''
+  /api/v1/courses/{id}/:
+    get:
+      operationId: api_v1_courses_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - api
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseRead'
+          description: ''
   /api/v1/demo/learning-goal/:
     get:
-      operationId: v1_demo_learning_goal_retrieve
+      operationId: api_v1_demo_learning_goal_retrieve
       tags:
-      - v1
+      - api
       security:
       - cookieAuth: []
       responses:
@@ -19,9 +55,9 @@ paths:
                 $ref: '#/components/schemas/LearningGoalInput'
           description: ''
     post:
-      operationId: v1_demo_learning_goal_create
+      operationId: api_v1_demo_learning_goal_create
       tags:
-      - v1
+      - api
       requestBody:
         content:
           application/json:
@@ -45,6 +81,31 @@ paths:
           description: ''
 components:
   schemas:
+    CourseRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        subject:
+          type: string
+          readOnly: true
+        school_class:
+          type: string
+          readOnly: true
+        teacher:
+          type: string
+          nullable: true
+          readOnly: true
+        year:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - school_class
+      - subject
+      - teacher
+      - year
     LearningGoalInput:
       type: object
       properties:
